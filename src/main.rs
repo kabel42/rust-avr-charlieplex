@@ -6,7 +6,7 @@ use arduino_hal::port::Pin;
 use panic_halt as _;
 
 fn delay() {
-    arduino_hal::delay_us(10);
+    arduino_hal::delay_us(20);
 }
 
 fn _led_on(
