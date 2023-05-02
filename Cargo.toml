@@ -19,7 +19,8 @@ heapless = "0.7.16"
 
 [dependencies.arduino-hal]
 git = "https://github.com/rahix/avr-hal"
-rev = "1aacefb335517f85d0de858231e11055d9768cdf"
+rev = "e29a7be5b1fa9d490ded11e539d345af041ccef6"
+
 features = ["nano168"]
 
 [dependencies.avr-device]
