@@ -9,6 +9,7 @@ fn delay() {
     arduino_hal::delay_us(20);
 }
 
+#[inline]
 fn _led_on(
     b: Pin<Input<Floating>>,
     c: Pin<Input<Floating>>,
