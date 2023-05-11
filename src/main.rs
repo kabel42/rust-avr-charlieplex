@@ -106,9 +106,11 @@ fn main() -> ! {
     loop {
         if data[i] > j {
             c = c.led_on(i);
+        } else {
+            c = c.led_on(usize::MAX);
         }
         i += 1;
-
+        
         if i == 6 {
             i = 0;
             j += 1;
