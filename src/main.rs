@@ -37,50 +37,37 @@ impl TristatePin {
 }
 
 struct Charlieplex {
-    a: TristatePin,
-    b: TristatePin,
-    c: TristatePin,
+    pin0: TristatePin,
+    pin1: TristatePin,
+    pin2: TristatePin,
+    leds: [(usize, usize); 6],
 }
 
 impl Charlieplex {
-    fn led_on(self, led: usize) -> Charlieplex {
+    fn led_on(mut self, led: Option<usize>) -> Charlieplex{
         match led {
-            0 => Charlieplex {
-                a: self.a.to_low(),
-                b: self.b.to_high(),
-                c: self.c.to_float(),
-            },
-            1 => Charlieplex {
-                a: self.a.to_high(),
-                b: self.b.to_low(),
-                c: self.c.to_float(),
-            },
-            2 => Charlieplex {
-                a: self.a.to_float(),
-                b: self.b.to_low(),
-                c: self.c.to_high(),
-            },
-            3 => Charlieplex {
-                a: self.a.to_float(),
-                b: self.b.to_high(),
-                c: self.c.to_low(),
-            },
-            4 => Charlieplex {
-                a: self.a.to_high(),
-                b: self.b.to_float(),
-                c: self.c.to_low(),
-            },
-            5 => Charlieplex {
-                a: self.a.to_low(),
-                b: self.b.to_float(),
-                c: self.c.to_high(),
-            },
-            _ => Charlieplex {
-                a: self.a.to_float(),
-                b: self.b.to_float(),
-                c: self.c.to_float(),
-            },
+            Some(l) => {
+                fn helper(pin: TristatePin, leds: &(usize, usize), led: usize) -> TristatePin {
+                    if led == leds.0 {
+                        pin.to_high()
+                    } else if led == leds.1 {
+                        pin.to_low()
+                    } else {
+                        pin.to_float()
+                    }
+                }
+
+                self.pin0 = helper(self.pin0, &self.leds[l], 0);
+                self.pin1 = helper(self.pin1, &self.leds[l], 1);
+                self.pin2 = helper(self.pin2, &self.leds[l], 2);
+            }
+            _ => {
+                self.pin0 = self.pin0.to_float();
+                self.pin1 = self.pin1.to_float();
+                self.pin2 = self.pin2.to_float();
+            }
         }
+        self
     }
 }
 
@@ -90,9 +77,10 @@ fn main() -> ! {
     let pins = arduino_hal::pins!(dp);
 
     let mut c = Charlieplex {
-        a: TristatePin::Floating(pins.d2.downgrade()),
-        b: TristatePin::Floating(pins.d3.downgrade()),
-        c: TristatePin::Floating(pins.d4.downgrade()),
+        pin0: TristatePin::Floating(pins.d2.downgrade()),
+        pin1: TristatePin::Floating(pins.d3.downgrade()),
+        pin2: TristatePin::Floating(pins.d4.downgrade()),
+        leds: [(1, 0), (0, 1), (2, 1), (1, 2), (0, 2), (2, 0)],
     };
 
     let mut i: usize = 0;
@@ -105,12 +93,12 @@ fn main() -> ! {
 
     loop {
         if data[i] > j {
-            c = c.led_on(i);
+            c = c.led_on(Some(i));
         } else {
-            c = c.led_on(usize::MAX);
+            c = c.led_on(None);
         }
         i += 1;
-        
+
         if i == 6 {
             i = 0;
             j += 1;
