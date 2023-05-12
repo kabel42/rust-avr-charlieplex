@@ -42,8 +42,8 @@ struct Charlieplex<const N: usize, const M: usize> {
     leds: [(usize, usize); M],
 }
 
-impl<const N: usize, const M: usize> Charlieplex<N,M> {
-    fn led_on(mut self, led: Option<usize>) -> Charlieplex<N,M>{
+impl<const N: usize, const M: usize> Charlieplex<N, M> {
+    fn led_on(mut self, led: Option<usize>) -> Charlieplex<N, M> {
         match led {
             Some(l) => {
                 fn helper(pin: TristatePin, leds: &(usize, usize), led: usize) -> TristatePin {
@@ -57,13 +57,17 @@ impl<const N: usize, const M: usize> Charlieplex<N,M> {
                 }
                 for i in 0..self.pins.len() {
                     let tmp = helper(self.pins.pop_front().unwrap(), &self.leds[l], i);
-                    unsafe{self.pins.push_back_unchecked(tmp);}
+                    unsafe {
+                        self.pins.push_back_unchecked(tmp);
+                    }
                 }
             }
             _ => {
                 for _ in 0..self.pins.len() {
                     let tmp = self.pins.pop_front().unwrap().to_float();
-                    unsafe{self.pins.push_back_unchecked(tmp);}
+                    unsafe {
+                        self.pins.push_back_unchecked(tmp);
+                    }
                 }
             }
         }
@@ -76,11 +80,11 @@ fn main() -> ! {
     let dp = arduino_hal::Peripherals::take().unwrap();
     let pins = arduino_hal::pins!(dp);
 
-    let mut ledpins = Deque::<_,3>::new();
+    let mut ledpins = Deque::<_, 3>::new();
     unsafe {
-    ledpins.push_back_unchecked(TristatePin::Floating(pins.d2.downgrade()));
-    ledpins.push_back_unchecked(TristatePin::Floating(pins.d3.downgrade()));
-    ledpins.push_back_unchecked(TristatePin::Floating(pins.d4.downgrade()));
+        ledpins.push_back_unchecked(TristatePin::Floating(pins.d2.downgrade()));
+        ledpins.push_back_unchecked(TristatePin::Floating(pins.d3.downgrade()));
+        ledpins.push_back_unchecked(TristatePin::Floating(pins.d4.downgrade()));
     }
     let mut c = Charlieplex {
         pins: ledpins,
