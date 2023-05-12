@@ -3,6 +3,7 @@
 
 use arduino_hal::port::mode::{Floating, Input, Output};
 use arduino_hal::port::Pin;
+use heapless::Deque;
 use panic_halt as _;
 
 fn delay() {
@@ -36,15 +37,13 @@ impl TristatePin {
     }
 }
 
-struct Charlieplex {
-    pin0: TristatePin,
-    pin1: TristatePin,
-    pin2: TristatePin,
-    leds: [(usize, usize); 6],
+struct Charlieplex<const N: usize, const M: usize> {
+    pins: Deque<TristatePin, N>,
+    leds: [(usize, usize); M],
 }
 
-impl Charlieplex {
-    fn led_on(mut self, led: Option<usize>) -> Charlieplex{
+impl<const N: usize, const M: usize> Charlieplex<N,M> {
+    fn led_on(mut self, led: Option<usize>) -> Charlieplex<N,M>{
         match led {
             Some(l) => {
                 fn helper(pin: TristatePin, leds: &(usize, usize), led: usize) -> TristatePin {
@@ -56,15 +55,16 @@ impl Charlieplex {
                         pin.to_float()
                     }
                 }
-
-                self.pin0 = helper(self.pin0, &self.leds[l], 0);
-                self.pin1 = helper(self.pin1, &self.leds[l], 1);
-                self.pin2 = helper(self.pin2, &self.leds[l], 2);
+                for i in 0..self.pins.len() {
+                    let tmp = helper(self.pins.pop_front().unwrap(), &self.leds[l], i);
+                    unsafe{self.pins.push_back_unchecked(tmp);}
+                }
             }
             _ => {
-                self.pin0 = self.pin0.to_float();
-                self.pin1 = self.pin1.to_float();
-                self.pin2 = self.pin2.to_float();
+                for _ in 0..self.pins.len() {
+                    let tmp = self.pins.pop_front().unwrap().to_float();
+                    unsafe{self.pins.push_back_unchecked(tmp);}
+                }
             }
         }
         self
@@ -76,10 +76,14 @@ fn main() -> ! {
     let dp = arduino_hal::Peripherals::take().unwrap();
     let pins = arduino_hal::pins!(dp);
 
+    let mut ledpins = Deque::<_,3>::new();
+    unsafe {
+    ledpins.push_back_unchecked(TristatePin::Floating(pins.d2.downgrade()));
+    ledpins.push_back_unchecked(TristatePin::Floating(pins.d3.downgrade()));
+    ledpins.push_back_unchecked(TristatePin::Floating(pins.d4.downgrade()));
+    }
     let mut c = Charlieplex {
-        pin0: TristatePin::Floating(pins.d2.downgrade()),
-        pin1: TristatePin::Floating(pins.d3.downgrade()),
-        pin2: TristatePin::Floating(pins.d4.downgrade()),
+        pins: ledpins,
         leds: [(1, 0), (0, 1), (2, 1), (1, 2), (0, 2), (2, 0)],
     };
 
